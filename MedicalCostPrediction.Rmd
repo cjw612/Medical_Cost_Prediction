@@ -1,0 +1,152 @@
+---
+title: "Medical Prediction"
+output: html_document
+date: "2025-04-07"
+---
+
+```{r}
+# Load libraries
+library(dplyr)
+library(caret)
+library(ggplot2)
+library(randomForest)
+library(corrplot)
+library(reshape2)
+```
+
+#### Read file
+
+```{r}
+setwd("/Users/jonathanwang/Documents/GitHub/Medical_Cost_Prediction")
+df = read.csv("insurance.csv", header = TRUE)
+```
+
+#### Recode Variables
+```{r}
+# Recode 'sex' and 'smoker'
+df$sex = ifelse(df$sex == "male", 0, 1)
+df$smoker = ifelse(df$smoker == "no", 0, 1)
+
+# Transform 'region' as factor
+df$region = as.factor(df$region)
+```
+
+#### Plot bar charts and histograms
+```{r}
+# Histogram for Charges
+ggplot(df, aes(x = charges)) +
+  geom_histogram(bins = 100, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Charges", x = "Charges", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+
+# Histogram for Age
+ggplot(df, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Age", x = "Age", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+
+# Histogram for BMI
+ggplot(df, aes(x = bmi)) +
+  geom_histogram(binwidth = 2, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of BMI", x = "BMI", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+
+# Histogram for Children
+ggplot(df, aes(x = children)) +
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Children", x = "Number of Children", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+
+# Plot Bar Charts for categorical variables (sex, smoker, region)
+
+# Bar chart for Sex
+ggplot(df, aes(x = factor(sex))) +
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Bar Chart of Sex", x = "Sex (0 = Male, 1 = Female)", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+
+# Bar chart for Smoker
+ggplot(df, aes(x = factor(smoker))) +
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Bar Chart of Smoker", x = "Smoker (0 = No, 1 = Yes)", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+```
+#### Plot correlation matrix
+```{r}
+# Calculate the correlation matrix
+cor_matrix <- cor(df_continuous)
+
+# Reshape the correlation matrix into long format for ggplot
+cor_matrix_melted <- melt(cor_matrix)
+
+# Plot the heatmap
+ggplot(cor_matrix_melted, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +  # Draws the heatmap tiles
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, 
+                       limits = c(-1, 1), name = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        axis.text.y = element_text(size = 12), 
+        axis.title = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 14)) +  
+  labs(title = "Correlation Heatmap")
+```
+
+
+#### Split data into training and test datasets
+```{r}
+set.seed(24)
+trainIndex = createDataPartition(df$charges, p = 0.8, list = FALSE)
+trainData = df[trainIndex, ]
+testData = df[-trainIndex, ]
+```
+
+#### Perform hyperparameter optimization on mtry
+```{r}
+# Set up the control for cross-validation
+train_control <- trainControl(method = "cv", number = 5, search = "grid")
+
+tune_grid <- expand.grid(.mtry = 1:6)
+
+# Train the Random Forest model using cross-validation and the grid of hyperparameters
+rf_model <- train(
+  charges ~ age + bmi + children + sex + smoker + region, 
+  data = trainData, 
+  method = "rf", 
+  trControl = train_control, 
+  tuneGrid = tune_grid,
+  ntry = 200,
+  importance = TRUE
+)
+```
+
+#### Predict on test data
+```{r}
+predictions <- predict(rf_model, newdata = testData)
+actual <- testData$charges
+
+# Regression Metrics
+# 1. Mean Squared Error (MSE)
+mse <- mean((predictions - actual)^2)
+
+# 2. Root Mean Squared Error (RMSE)
+rmse <- sqrt(mse)
+
+# 3. Mean Absolute Error (MAE)
+mae <- mean(abs(predictions - actual))
+
+# 4. R-squared
+rsq <- 1 - sum((predictions - actual)^2) / sum((actual - mean(actual))^2)
+
+# Print the metrics
+cat("Mean Squared Error (MSE):", mse, "\n")
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
+cat("Mean Absolute Error (MAE):", mae, "\n")
+cat("R-squared:", rsq, "\n")
+```
