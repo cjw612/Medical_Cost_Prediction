@@ -131,7 +131,7 @@ rf_model <- train(
 predictions <- predict(rf_model, newdata = testData)
 actual <- testData$charges
 
-# Regression Metrics
+# Obtain regression Metrics
 # 1. Mean Squared Error (MSE)
 mse <- mean((predictions - actual)^2)
 
