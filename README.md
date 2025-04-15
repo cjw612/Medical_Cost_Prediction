@@ -2,7 +2,7 @@
 
 - ### Project Summary
   - #### Project Overview
-    This project aims to predict the medical cost of insurance purchasers given their demographic variables, including but not limited to age, sex, region, etc. This project leverages Random Forst Regression with hyperparameter tuning implmented in R. The resulting model has a R-squared value of 0.88, indicating that the model explained 88 percent of the variance in the dataset. When complemented with additional data such as medical history, the model may perform even better than the current results. 
+    This project aims to predict the medical cost of insurance purchasers given their demographic variables, including but not limited to age, sex, region, etc. This project leverages Random Forst Regression with hyperparameter tuning implmented in R. The resulting model has a R-squared value of 0.88, indicating that the model explained 88 percent of the variance in the dataset. The model can be potentially improved when complemented with additional data, such as medical history.
 
   - #### Tech Stack
     - **Programming Languages:** R
